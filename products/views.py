@@ -1,9 +1,11 @@
 from django.shortcuts import render
-from rest_framework import generics, permissions
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import generics, permissions, filters
 from .models import Product
 from .serializers import ProductSerializer
 from vendors.models import Vendor
 from rest_framework.exceptions import ValidationError, PermissionDenied
+from core.pagination import ProductPagination
 
 
 class CreateProductView(generics.CreateAPIView):
@@ -22,9 +24,17 @@ class CreateProductView(generics.CreateAPIView):
 
         serializer.save(vendor=vendor)
 
+
 class ProductListView(generics.ListAPIView):
     queryset = Product.objects.filter(is_active=True)
     serializer_class = ProductSerializer
+    pagination_class = ProductPagination
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filterset_fields = ["category"]  # DjangoFilterBackend auto-filters this
+    search_fields = ["name", "description"]
+
+    # No need to override get_queryset at all!
+
 class ProductDetailView(generics.RetrieveAPIView):
     queryset = Product.objects.filter(is_active=True)
     serializer_class = ProductSerializer
