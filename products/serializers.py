@@ -7,10 +7,8 @@ from django.db.models import Avg
 class ProductSerializer(serializers.ModelSerializer):
 
     def get_average_rating(self, obj):
-        return Review.objects.filter(product=obj).aggregate(
-            avg=Avg("rating")
-
-        )["avg"]
+        avg = Review.objects.filter(product=obj).aggregate(avg=Avg("rating"))["avg"]
+        return avg if avg else 0
 
 
     def get_review_count(self, obj):
