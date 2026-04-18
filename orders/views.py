@@ -111,7 +111,7 @@ class CheckoutView(generics.CreateAPIView):
         # Clear cart
         cart.items.all().delete()
 
-        send_order_confirmation_email(
+        send_order_confirmation_email.delay(
             request.user.email,
             order.pk
         )

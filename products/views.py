@@ -9,12 +9,13 @@ from vendors.models import Vendor
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from core.pagination import ProductPagination
 from django.core.cache import cache
-
+from rest_framework.parsers import MultiPartParser, FormParser
 
 class CreateProductView(generics.CreateAPIView):
 
     serializer_class = ProductSerializer
     permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
 
     def perform_create(self, serializer):
 

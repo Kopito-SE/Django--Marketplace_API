@@ -27,6 +27,7 @@ class ProductSerializer(serializers.ModelSerializer):
             "price",
             "stock",
             "category",
+            "image",
             "average_rating",
             "review_count",
             "created_at"
