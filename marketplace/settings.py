@@ -13,6 +13,11 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 from pathlib import Path
 from datetime import timedelta
 import pymysql
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
 pymysql.version_info = (2, 2, 1, "final", 0)
 pymysql.install_as_MySQLdb()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -30,6 +35,21 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+#Celery Details
+CELERY_BROKER_URL = "redis://127.0.0.1:6379/0"
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_TIMEZONE = "UTC"
+
+CACHES = {
+    "default":{
+        "BACKEND":"django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/0",
+        "OPTIONS": {
+            "CLIENT_CLASS":"django_redis.client.DefaultClient",
+        }
+    }
+}
 
 # Application definition
 
@@ -87,12 +107,12 @@ WSGI_APPLICATION = 'marketplace.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'django_marketplace',
-        'USER':'django_user',
-        'PASSWORD':'osama4545',
+        'ENGINE': os.environ.get("ENGINE"),
+        'NAME': os.environ.get("NAME"),
+        'USER':os.environ.get("USER"),
+        'PASSWORD':os.environ.get("PASSWORD"),
         'HOST':'127.0.0.1',
-        'PORT':'3306',
+        'PORT': os.environ.get("PORT"),
         'OPTIONS':{
             'init_command':"SET sql_mode='STRICT_TRANS_TABLES'",
             'charset':'utf8mb4',

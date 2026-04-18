@@ -6,6 +6,7 @@ from .serializers import CartSerializer, OrderSerializer, OrderItemSerializer
 from products.models import Product
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
+from .tasks  import send_order_confirmation_email
 
 
 class CartView(generics.RetrieveAPIView):
@@ -110,10 +111,18 @@ class CheckoutView(generics.CreateAPIView):
         # Clear cart
         cart.items.all().delete()
 
+        send_order_confirmation_email(
+            request.user.email,
+            order.pk
+        )
+
         return Response({
             "message": "Order created successfully",
             "order_id": order.pk
         })
+
+
+
 class UserOrderListView(generics.ListAPIView):
 
     serializer_class = OrderSerializer
