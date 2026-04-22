@@ -7,7 +7,8 @@ from products.models import Product
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from .tasks  import send_order_confirmation_email
-
+from django.db.models import Sum, Count
+from django.db.models import F
 
 class CartView(generics.RetrieveAPIView):
 
@@ -175,3 +176,51 @@ class VendorOrderUpdateView(generics.UpdateAPIView):
         return Order.objects.filter(
             items__product__vendor = vendor
         ).distinct()
+
+class VendorStatsView(generics.GenericAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        if not hasattr(user, "vendor_profile"):
+            raise ValidationError("You are not a Vendor")
+
+        vendor = user.vendor_profile
+
+        order_items = OrderItem.objects.filter(
+            product__vendor=vendor
+        )
+        stats = order_items.aggregate(
+            total_orders=Count("order", distinct=True),
+            total_revenue=Sum(F("price") * F("quantity")),
+            total_products_sold=Sum("quantity")
+        )
+
+        return Response({
+            "total_orders": stats["total_orders"] or 0,
+            "total_revenue": stats["total_revenue"] or 0,
+            "total_products_sold": stats["total_products_sold"] or 0
+        })
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

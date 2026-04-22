@@ -35,9 +35,20 @@ class LoginSerializer(TokenObtainPairSerializer):
         )
         if not user:
             raise serializers.ValidationError("Invalid email or password")
+
+        if not user.is_active:
+            raise serializers.ValidationError(
+                "Account not verified.Please verify your account to Login"
+            )
+        if not user.is_verified:
+            raise serializers.ValidationError(
+                "Email not Verified.Please Verify your email before logging in."
+            )
+
         data = super().validate(attrs)
 
         data["email"] = user.email
         data["role"] = user.role
+        data["is_verified"] = user.is_verified
 
         return data
