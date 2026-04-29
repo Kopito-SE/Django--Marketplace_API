@@ -27,6 +27,7 @@ def stk_push(phone, amount, order_id):
     password = base64.b64encode(
         (settings.MPESA_SHORTCODE + settings.MPESA_PASSKEY + timestamp).encode()
     ).decode()
+    print("CALLBACK URL:", settings.MPESA_CALLBACK_URL)
 
     payload = {
         "BusinessShortCode": settings.MPESA_SHORTCODE,
@@ -44,6 +45,7 @@ def stk_push(phone, amount, order_id):
     headers = {
         "Authorization":f"Bearer {token}"
     }
+    print("PAYLOAD:", payload)
 
     response = requests.post(url, json=payload, headers=headers)
     result = response.json()

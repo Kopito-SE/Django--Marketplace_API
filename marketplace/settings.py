@@ -37,7 +37,12 @@ SECRET_KEY = 'django-insecure-@zb@9wg_de!s)ew2d=)wkha-imd+ijvy3-9-8*lmf6lacxnbb^
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    'trade-hacked-gaffe.ngrok-free.dev',
+    '.ngrok-free.dev',
+]
 
 #Celery Details
 CELERY_BROKER_URL = "redis://127.0.0.1:6379/0"
@@ -191,4 +196,4 @@ MPESA_CONSUMER_KEY = os.environ.get("MPESA_CONSUMER_KEY")
 MPESA_CONSUMER_SECRET = os.environ.get("MPESA_CONSUMER_SECRET")
 MPESA_SHORTCODE = os.environ.get("MPESA_SHORTCODE")
 MPESA_PASSKEY = os.environ.get("MPESA_PASSKEY")
-MPESA_CALLBACK_URL = os.environ.get("MPESA_CALLBACK_URL")
+MPESA_CALLBACK_URL = os.getenv("MPESA_CALLBACK_URL")
