@@ -54,6 +54,21 @@ class Order(models.Model):
         default="pending"
     )
     created_at = models.DateTimeField(auto_now_add=True)
+    payment_status = models.CharField(
+        max_length=20,
+        default="pending"
+    )
+    transaction_id = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True
+    )
+    checkout_request_id = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True
+    )
+
 
 
     def __str__(self):

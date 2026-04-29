@@ -32,13 +32,27 @@ class EmailOTP(models.Model):
         related_name="otp"
     )
     code = models.CharField(max_length=6)
+
+    attempts = models.IntegerField(default=0)
+    max_attempts = 5
+
     created_at = models.DateTimeField(auto_now=True)
+    last_sent = models.DateTimeField(auto_now=True)
+
 
     def is_expired(self):
         return timezone.now() > self.created_at + timedelta(minutes=5)
 
+    def can_resend(self):
+        return timezone.now() > self.last_sent + timedelta(seconds=60)
+
+    def is_blocked(self):
+        return self.attempts > self.max_attempts
+
     def generate_code(self):
         self.code = str(random.randint(100000,999999))
+        self.last_send = timezone.now()
+        self.attempts = 0
 
 
 

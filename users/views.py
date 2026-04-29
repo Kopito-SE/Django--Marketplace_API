@@ -41,6 +41,9 @@ class VerifyOTPView(generics.GenericAPIView):
         except:
             raise ValidationError("Invalid email")
 
+        if otp.is_blocked():
+            raise ValidationError("Too many Failed attempts.Request new otp")
+
         if otp.is_expired():
             raise ValidationError("OTP expired")
 
@@ -54,6 +57,25 @@ class VerifyOTPView(generics.GenericAPIView):
         otp.delete()
 
         return Response({"message": "Account verified successfully"})
+class ResendOTPView(generics.GenericAPIView):
+    def post(self, request):
+        email = request.data.get("email")
+        try:
+            user = User.objects.get(email=email)
+            otp = user.otp
+
+        except:
+            raise ValidationError("User not Found")
+
+        if not otp.can_resend():
+            raise ValidationError("Wait before requesting another OTP")
+
+        otp.generate_code()
+        otp.save()
+
+        send_otp_mail.delay(user.email, otp.code)
+
+        return Response({"message":"OTP send successfully,check your email"})
 
 class LoginView(TokenObtainPairView):
     serializer_class = LoginSerializer

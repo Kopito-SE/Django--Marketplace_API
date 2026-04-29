@@ -68,6 +68,7 @@ INSTALLED_APPS = [
     'django_filters',
     'rest_framework',
     'core',
+    'payments',
 
     'users',
     'vendors',
@@ -184,3 +185,10 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL")
+
+#Mpesa Configuration Credentials
+MPESA_CONSUMER_KEY = os.environ.get("MPESA_CONSUMER_KEY")
+MPESA_CONSUMER_SECRET = os.environ.get("MPESA_CONSUMER_SECRET")
+MPESA_SHORTCODE = os.environ.get("MPESA_SHORTCODE")
+MPESA_PASSKEY = os.environ.get("MPESA_PASSKEY")
+MPESA_CALLBACK_URL = os.environ.get("MPESA_CALLBACK_URL")
