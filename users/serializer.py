@@ -12,12 +12,16 @@ class RegisterSerializer(serializers.ModelSerializer):
             "email",
             "username",
             "password",
-            "role"
+            "role",
+            "phone_number",
+            "first_name",
+            "last_name"
         ]
         extra_kwargs = {
-            "password":{"write_only":True}
+            "password":{"write_only":True},
         }
     def create(self, validated_data):
+
         validated_data["password"] = make_password(validated_data["password"])
         return super().create(validated_data)
 class LoginSerializer(TokenObtainPairSerializer):
@@ -52,3 +56,28 @@ class LoginSerializer(TokenObtainPairSerializer):
         data["is_verified"] = user.is_verified
 
         return data
+
+
+
+class UserProfileSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = User
+        fields = [
+            'id',
+            'username',
+            'email',
+            'first_name',
+            'last_name',
+            'phone_number',
+            'role',
+            'is_verified',
+        ]
+
+    def update(self, instance, validated_data):
+        instance.phone_number = validated_data.get('phone_number',instance.phone_number)
+        instance.first_name = validated_data.get('first_name', instance.first_name)
+        instance.last_name = validated_data.get('last_name', instance.last_name)
+        instance.email = validated_data.get('email', instance.email)
+        instance.save()
+        return instance

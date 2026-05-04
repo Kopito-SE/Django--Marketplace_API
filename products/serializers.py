@@ -1,11 +1,14 @@
 from rest_framework import serializers
-from .models import Product
+from .models import Product, Category
 from reviews.models import Review
 from django.db.models import Avg
 
 
 class ProductSerializer(serializers.ModelSerializer):
-
+    category = serializers.SlugRelatedField(
+        queryset=Category.objects.all(),
+        slug_field="name"
+    )
     def get_average_rating(self, obj):
         avg = Review.objects.filter(product=obj).aggregate(avg=Avg("rating"))["avg"]
         return avg if avg else 0
@@ -35,3 +38,7 @@ class ProductSerializer(serializers.ModelSerializer):
         ]
         read_only_fields =["id","created_at"] #Prevents clients from modifying this fields when sending data to the API
 
+class CategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ["id","name"]

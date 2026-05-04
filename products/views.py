@@ -3,8 +3,8 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, permissions, filters
 from rest_framework.response import Response
 
-from .models import Product
-from .serializers import ProductSerializer
+from .models import Product, Category
+from .serializers import ProductSerializer, CategorySerializer
 from vendors.models import Vendor
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from core.pagination import ProductPagination
@@ -71,3 +71,6 @@ class ProductDetailView(generics.RetrieveAPIView):
             cache.set(cache_key, response.data, timeout=60)
             return response
         return Response(data)
+class CategoryListView(generics.ListAPIView):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer

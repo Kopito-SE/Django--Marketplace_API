@@ -74,7 +74,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'core',
     'payments',
-
+    'corsheaders',
     'users',
     'vendors',
     'products',
@@ -83,6 +83,8 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -91,6 +93,13 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",  # Vite default port
+    "http://localhost:3000",  # Create React App default
+]
+
+CORS_ALLOW_ALL_ORIGINS = True  # Only for development!
 
 ROOT_URLCONF = 'marketplace.urls'
 

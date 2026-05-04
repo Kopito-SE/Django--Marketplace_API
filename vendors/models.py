@@ -10,7 +10,10 @@ class Vendor(models.Model):
         related_name="vendor_profile"
     )
     store_name = models.CharField(max_length=255)
-    description = models.TextField(blank=True)
+    store_description = models.TextField(blank=True)
+    store_address = models.TextField(blank=True)
+    store_phone = models.IntegerField(null=True)
+    store_email = models.EmailField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
 
