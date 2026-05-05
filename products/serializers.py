@@ -5,21 +5,19 @@ from django.db.models import Avg
 
 
 class ProductSerializer(serializers.ModelSerializer):
-    category = serializers.SlugRelatedField(
-        queryset=Category.objects.all(),
-        slug_field="name"
+    category = serializers.PrimaryKeyRelatedField(
+        queryset=Category.objects.all()
     )
+
+    average_rating = serializers.SerializerMethodField()
+    review_count = serializers.SerializerMethodField()
+
     def get_average_rating(self, obj):
         avg = Review.objects.filter(product=obj).aggregate(avg=Avg("rating"))["avg"]
         return avg if avg else 0
 
-
     def get_review_count(self, obj):
         return Review.objects.filter(product=obj).count()
-
-
-    average_rating =serializers.SerializerMethodField()
-    review_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -34,10 +32,8 @@ class ProductSerializer(serializers.ModelSerializer):
             "average_rating",
             "review_count",
             "created_at"
-
         ]
-        read_only_fields =["id","created_at"] #Prevents clients from modifying this fields when sending data to the API
-
+        read_only_fields = ["id", "created_at"]
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category

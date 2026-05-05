@@ -11,6 +11,9 @@ from core.pagination import ProductPagination
 from django.core.cache import cache
 from rest_framework.parsers import MultiPartParser, FormParser
 
+
+
+
 class CreateProductView(generics.CreateAPIView):
 
     serializer_class = ProductSerializer
@@ -27,7 +30,8 @@ class CreateProductView(generics.CreateAPIView):
             raise PermissionDenied("Your vendor account is not active")
 
         serializer.save(vendor=vendor)
-
+        # CLEAR CACHE
+        cache.delete("product_list")
 
 class ProductListView(generics.ListAPIView):
     queryset = Product.objects.filter(is_active=True)
@@ -41,19 +45,25 @@ class ProductListView(generics.ListAPIView):
     def list(self, request, *args, **kwargs):
         print("🔵 View is being called!")
 
-        cache_key = "product_list"
+        page = request.query_params.get("page", 1)
+        search = request.query_params.get("search", "")
+        category = request.query_params.get("category", "")
+
+        cache_key = f"product_list_page_{page}_search_{search}_category_{category}"
+
         data = cache.get(cache_key)
+        print(f"🔵 Cache key: {cache_key}")
         print(f"🔵 Cache data: {data}")
 
         if not data:
             print("🟡 CACHE MISS - Fetching from database")
             response = super().list(request, *args, **kwargs)
-            cache.set(cache_key,response.data, timeout=60)
+            cache.set(cache_key, response.data, timeout=60)
             print("🟢 Data cached successfully")
             return response
+
         print("✅ CACHE HIT")
         return Response(data)
-
 class ProductDetailView(generics.RetrieveAPIView):
     queryset = Product.objects.filter(is_active=True)
     serializer_class = ProductSerializer
