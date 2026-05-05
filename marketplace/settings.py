@@ -32,10 +32,12 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-@zb@9wg_de!s)ew2d=)wkha-imd+ijvy3-9-8*lmf6lacxnbb^'
+SECRET_KEY = os.environ.get("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
+
+
 
 ALLOWED_HOSTS = [
     'localhost',
@@ -44,12 +46,18 @@ ALLOWED_HOSTS = [
     '.ngrok-free.dev',
 ]
 
+
+
+
 #Celery Details
 CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL")
 CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND")
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_TIMEZONE = "UTC"
+
+
+
 
 CACHES = {
     "default":{
@@ -74,7 +82,7 @@ INSTALLED_APPS = [
 
     'django_filters',
     'rest_framework',
-    'corsheaders',
+     # 'corsheaders',
     'rest_framework_simplejwt',
     'core',
     'payments',
@@ -86,8 +94,10 @@ INSTALLED_APPS = [
     'reviews',
 ]
 
+
+
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',
+     #'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -96,14 +106,22 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 
+
+
+
 ]
+
 # CORS SETTINGS
 # Allow React's development server
-CORS_ALLOWED_ORIGINS = [
+'''CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",  # Vite default port
     "http://localhost:3000",  # Create React App default
     "http://127.0.0.1:5173",
 ]
+
+
+
+
 
 # Allow credentials (JWT tokens, cookies)
 CORS_ALLOW_CREDENTIALS = True
@@ -117,6 +135,9 @@ CORS_ALLOW_METHODS = [
     'PUT',
 ]
 
+
+
+
 CORS_ALLOW_HEADERS = [
     'accept',
     'accept-encoding',
@@ -129,6 +150,12 @@ CORS_ALLOW_HEADERS = [
     'x-requested-with',
 ]
 
+
+
+
+'''
+
+
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
@@ -137,6 +164,11 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
 }
+
+
+
+
+
 # settings.py - Add REST_FRAMEWORK settings
 
 REST_FRAMEWORK = {
@@ -148,7 +180,13 @@ REST_FRAMEWORK = {
     ),
 }
 
+
+
+
 ROOT_URLCONF = 'marketplace.urls'
+
+
+
 
 TEMPLATES = [
     {
@@ -165,11 +203,19 @@ TEMPLATES = [
     },
 ]
 
+
+
+
 WSGI_APPLICATION = 'marketplace.wsgi.application'
+
+
 
 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
+
+
+
 
 DATABASES = {
     'default': {
@@ -185,6 +231,8 @@ DATABASES = {
         },
     }
 }
+
+
 
 
 # Password validation
@@ -206,6 +254,8 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
+
+
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
 
@@ -221,6 +271,10 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
+
+
+
+
 STATIC_URL = 'static/'
 AUTH_USER_MODEL = "users.User"
 
@@ -228,6 +282,9 @@ SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
+
+
+
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES":(
         "rest_framework_simplejwt.authentication.JWTAuthentication",
@@ -238,6 +295,10 @@ REST_FRAMEWORK = {
 
     ]
 }
+
+
+
+
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = "smtp.gmail.com"
 EMAIL_PORT = 587
@@ -246,6 +307,13 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL")
+
+
+
+
+
+
+
 
 #Mpesa Configuration Credentials
 MPESA_CONSUMER_KEY = os.environ.get("MPESA_CONSUMER_KEY")
