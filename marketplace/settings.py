@@ -46,6 +46,7 @@ ALLOWED_HOSTS = [
 
 #Celery Details
 CELERY_BROKER_URL = "redis://127.0.0.1:6379/0"
+CELERY_RESULT_BACKEND = "redis://127.0.0.1:6379/0"
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_TIMEZONE = "UTC"
@@ -132,10 +133,7 @@ DATABASES = {
         'PASSWORD':os.environ.get("PASSWORD"),
         'HOST':'127.0.0.1',
         'PORT': os.environ.get("PORT"),
-        'OPTIONS':{
-            'init_command':"SET sql_mode='STRICT_TRANS_TABLES'",
-            'charset':'utf8mb4',
-        },
+
     }
 }
 

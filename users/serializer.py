@@ -18,12 +18,14 @@ class RegisterSerializer(serializers.ModelSerializer):
             "last_name"
         ]
         extra_kwargs = {
-            "password":{"write_only":True},
+
+      "password":{"write_only":True},
         }
     def create(self, validated_data):
 
         validated_data["password"] = make_password(validated_data["password"])
         return super().create(validated_data)
+
 class LoginSerializer(TokenObtainPairSerializer):
 
     username_field = "email"
