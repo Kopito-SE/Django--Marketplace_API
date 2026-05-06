@@ -220,15 +220,12 @@ WSGI_APPLICATION = 'marketplace.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': os.environ.get("ENGINE"),
-        'NAME': os.environ.get("NAME"),
-        'USER':os.environ.get("USER"),
-        'PASSWORD':os.environ.get("PASSWORD"),
-        'HOST':os.environ.get("HOST","127.0.0.1"),
+        'NAME': os.environ.get("POSTGRES_DB"),
+        'USER':os.environ.get("POSTGRES_USER"),
+        'PASSWORD':os.environ.get("POSTGRES_PASSWORD"),
+        'HOST':os.environ.get("HOST"),
         'PORT': os.environ.get("PORT"),
-        'OPTIONS':{
-            'init_command':"SET sql_mode='STRICT_TRANS_TABLES'",
-            'charset':'utf8mb4',
-        },
+
     }
 }
 
@@ -276,7 +273,15 @@ USE_TZ = True
 
 
 STATIC_URL = 'static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+]
+
+
+
 AUTH_USER_MODEL = "users.User"
+
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),

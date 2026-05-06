@@ -1,4 +1,3 @@
-
 services:
   web:
     build: .
@@ -17,22 +16,20 @@ services:
         condition: service_started
 
   db:
-    image: mysql:8.0
-    container_name: mysql_db
-    command: --default-authentication-plugin=mysql_native_password
+    image: postgres:15
+    container_name: postgres_db
     environment:
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - "3306:3306"
+      - "5432:5432"
     volumes:
-      - mysql_data:/var/lib/mysql
+      - postgres_data:/var/lib/postgresql/data
     env_file:
       - .env
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
       timeout: 10s
       retries: 5
       interval: 5s
@@ -72,4 +69,4 @@ services:
         condition: service_started
 
 volumes:
-  mysql_data:
+  postgres_data:
