@@ -6,9 +6,6 @@
   <component name="ChangeListManager">
     <list default="true" id="3d6dddae-7185-4b43-9ebd-856350c826d3" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docker/entrypoint.sh" beforeDir="false" afterPath="$PROJECT_DIR$/docker/entrypoint.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/marketplace/settings.py" beforeDir="false" afterPath="$PROJECT_DIR$/marketplace/settings.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
