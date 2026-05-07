@@ -1,6 +1,8 @@
 from rest_framework import serializers
 from .models import Review
 class ReviewSerializer(serializers.ModelSerializer):
+    user_name = serializers.CharField(source='user.username', read_only=True)
+
     class Meta:
         model = Review
         fields = [
@@ -8,6 +10,7 @@ class ReviewSerializer(serializers.ModelSerializer):
             "user",
             "product",
             "rating",
+            "user_name",
             "comment",
             "created_at"
         ]
