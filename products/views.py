@@ -35,6 +35,7 @@ class CreateProductView(generics.CreateAPIView):
 
 class ProductListView(generics.ListAPIView):
     queryset = Product.objects.filter(is_active=True)
+
     serializer_class = ProductSerializer
     pagination_class = ProductPagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]

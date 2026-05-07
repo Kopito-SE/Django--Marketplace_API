@@ -1,0 +1,31 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual env
+venv/
+.env/
+
+# IDE
+.idea/
+.vscode/
+
+# Docker
+docker-compose.yml
+
+# Database
+db.sqlite3
+
+# Static/media
+staticfiles/
+media/
+
+# OS
+.DS_Store
+Thumbs.db
