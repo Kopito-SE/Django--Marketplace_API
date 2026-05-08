@@ -1,14 +1,33 @@
 from django.urls import path
-from .views import CartView, AddToCartView, CheckoutView, UserOrderListView, OrderDetailsView, VendorOrderListView, \
-    VendorOrderUpdateView, VendorStatsView
+from .views import (
+    CartView,
+    AddToCartView,
+    UpdateCartItemView,
+    RemoveFromCartView,
+    ClearCartView,
+    CheckoutView,
+    UserOrderListView,
+    OrderDetailsView,
+    VendorOrderListView,
+    VendorOrderUpdateView,
+    VendorStatsView
+)
 
 urlpatterns = [
-    path("", CartView.as_view()),
-    path("add/", AddToCartView.as_view()),
-    path("checkout/", CheckoutView.as_view()),
-    path("orders/", UserOrderListView.as_view()),
-    path("orders/<int:pk>/", OrderDetailsView.as_view()),
-    path("vendor/orders/", VendorOrderListView.as_view()),
-    path("vendor/orders/<int:pk>/", VendorOrderUpdateView.as_view()),
-    path("vendor/stats/", VendorStatsView.as_view())
+    # Cart endpoints
+    path("", CartView.as_view(), name='cart'),
+    path("add/", AddToCartView.as_view(), name='add-to-cart'),
+    path("items/<int:item_id>/", UpdateCartItemView.as_view(), name='update-cart-item'),
+    path("items/<int:item_id>/remove/", RemoveFromCartView.as_view(), name='remove-from-cart'),
+    path("clear/", ClearCartView.as_view(), name='clear-cart'),
+
+    # Order endpoints
+    path("checkout/", CheckoutView.as_view(), name='checkout'),
+    path("orders/", UserOrderListView.as_view(), name='user-orders'),
+    path("orders/<int:pk>/", OrderDetailsView.as_view(), name='order-details'),
+
+    # Vendor endpoints
+    path("vendor/orders/", VendorOrderListView.as_view(), name='vendor-orders'),
+    path("vendor/orders/<int:pk>/", VendorOrderUpdateView.as_view(), name='vendor-order-update'),
+    path("vendor/stats/", VendorStatsView.as_view(), name='vendor-stats'),
 ]
