@@ -17,7 +17,7 @@ services:
         condition: service_healthy  # Change to healthy if you add Redis healthcheck
 
   db:
-    image: postgres:17
+    image: postgres:15
     container_name: postgres_db
     restart: always
     environment:

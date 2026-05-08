@@ -1,4 +1,5 @@
 from rest_framework import generics, permissions, status
+from rest_framework.permissions import IsAuthenticated
 from twisted.python.compat import items
 from django.shortcuts import get_object_or_404
 
@@ -156,60 +157,92 @@ class ClearCartView(generics.DestroyAPIView):
         )
 
 
-class CheckoutView(generics.CreateAPIView):
-    permission_classes = [permissions.IsAuthenticated]
+class CheckoutView(generics.GenericAPIView):  # Changed from CreateAPIView
+    permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
         try:
             cart = request.user.cart
         except Cart.DoesNotExist:
-            raise ValidationError("Cart is empty")
+            return Response(
+                {"error": "Cart is empty", "message": "No cart found for this user"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         if not cart.items.exists():
-            raise ValidationError("Cart is empty")
+            return Response(
+                {"error": "Cart is empty", "message": "No items in cart"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         total_price = 0
+        order_items_data = []
 
-        order = Order.objects.create(
-            user=request.user,
-            total_price=0
-        )
-
+        # Check stock availability first (without modifying)
         for item in cart.items.all():
             product = item.product
-
             if product.stock < item.quantity:
-                raise ValidationError(f"Not enough stock for {product.name}")
+                return Response(
+                    {"error": f"Not enough stock for {product.name}",
+                     "message": f"Only {product.stock} items available"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
-            product.stock -= item.quantity
-            product.save()
+        # Create order
+        order = Order.objects.create(
+            user=request.user,
+            total_price=0,
+            status='pending'  # Add status field to your Order model
+        )
 
-            price = item.product.price
-            total_price += price * item.quantity
+        # Process all items
+        for item in cart.items.all():
+            product = item.product
+            price = product.price  # Assuming product has price field
+            item_total = price * item.quantity
+            total_price += item_total
 
             OrderItem.objects.create(
                 order=order,
-                product=item.product,
+                product=product,
                 quantity=item.quantity,
                 price=price
             )
 
+            # Update stock
+            product.stock -= item.quantity
+            product.save()
+
+            order_items_data.append({
+                "product_name": product.name,
+                "quantity": item.quantity,
+                "price": str(price),
+                "total": str(item_total)
+            })
+
+        # Update order total
         order.total_price = total_price
         order.save()
 
-        # Clear cart
+        # Clear cart after successful order
         cart.items.all().delete()
 
-        send_order_confirmation_email.delay(
-            request.user.email,
-            order.pk
-        )
+        # Send email (synchronous for debugging, use delay later)
+        try:
+            send_order_confirmation_email(
+                request.user.email,
+                order.pk
+            )
+        except Exception as e:
+            print(f"Email sending failed: {e}")
 
         return Response({
             "message": "Order created successfully",
-            "order_id": order.pk
-        })
-
+            "order_id": order.id,
+            "order_number": order.pk,
+            "total": str(total_price),
+            "items": order_items_data
+        }, status=status.HTTP_201_CREATED)
 
 class UserOrderListView(generics.ListAPIView):
     serializer_class = OrderSerializer
