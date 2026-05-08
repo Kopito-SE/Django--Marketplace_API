@@ -228,7 +228,7 @@ class OrderDetailsView(generics.RetrieveAPIView):
 
 
 class VendorOrderListView(generics.ListAPIView):
-    serializer_class = OrderItemSerializer
+    serializer_class = OrderSerializer  # Change to OrderSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
@@ -238,11 +238,23 @@ class VendorOrderListView(generics.ListAPIView):
         if not hasattr(user, "vendor_profile"):
             raise ValidationError("You are not a vendor")
 
-        vendor = getattr(user, "vendor_profile")
+        vendor = user.vendor_profile
 
-        return OrderItem.objects.filter(
+        # Get all order items for products belonging to this vendor
+        order_items = OrderItem.objects.filter(
             product__vendor=vendor
-        )
+        ).select_related('order', 'product')
+
+        # Get unique order IDs
+        order_ids = order_items.values_list('order_id', flat=True).distinct()
+
+        # Return Order objects (not OrderItems) with prefetched items for efficiency
+        return Order.objects.filter(
+            id__in=order_ids
+        ).prefetch_related(
+            'items',  # Prefetch order items
+            'items__product'  # Prefetch product details for each item
+        ).order_by('-created_at')  # Most recent first
 
 
 class VendorOrderUpdateView(generics.UpdateAPIView):
