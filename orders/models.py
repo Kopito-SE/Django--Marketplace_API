@@ -73,6 +73,8 @@ class Order(models.Model):
 
     failure_reason = models.TextField(null=True, blank=True)
 
+    class Meta:
+        ordering = ["-created_at"]
 
     def __str__(self):
         return f"Order {self.pk} - {self.user}"
