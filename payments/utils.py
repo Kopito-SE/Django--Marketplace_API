@@ -19,15 +19,21 @@ def get_mpesa_token():
         )
     )
     return response.json().get("access_token")
-def stk_push(phone, amount, order_id):
+def stk_push(phone, amount, reference):
 
     token = get_mpesa_token()
+
     url = "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest"
+
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+
     password = base64.b64encode(
-        (settings.MPESA_SHORTCODE + settings.MPESA_PASSKEY + timestamp).encode()
+        (
+            settings.MPESA_SHORTCODE
+            + settings.MPESA_PASSKEY
+            + timestamp
+        ).encode()
     ).decode()
-    print("CALLBACK URL:", settings.MPESA_CALLBACK_URL)
 
     payload = {
         "BusinessShortCode": settings.MPESA_SHORTCODE,
@@ -39,28 +45,20 @@ def stk_push(phone, amount, order_id):
         "PartyB": settings.MPESA_SHORTCODE,
         "PhoneNumber": phone,
         "CallBackURL": settings.MPESA_CALLBACK_URL,
-        "AccountReference": f"Order {order_id}",
-        "TransactionDesc": "Payment for order"
+        "AccountReference": reference,
+        "TransactionDesc": "Marketplace Payment"
     }
     headers = {
         "Authorization":f"Bearer {token}"
     }
-    print("PAYLOAD:", payload)
+    response = requests.post(
 
-    response = requests.post(url, json=payload, headers=headers)
-    result = response.json()
+        url,
+        json=payload,
+        headers=headers
+    )
 
-    #Save the CheckoutRequestID to the order
-    if result.get("ResponseCode") == "0":
-        try:
-            order = Order.objects.get(id=order_id)
-            order.checkout_request_id = result.get("CheckoutRequestID")
-            order.save()
-            print(f"✅ Saved CheckoutRequestID '{order.checkout_request_id}' to Order #{order_id}")
-        except Order.DoesNotExist:
-            print(f"❌ Order #{order_id} not found when trying to save CheckoutRequestID")
-
-    return result
+    return response.json()
 
 
 def query_payment_status(checkout_request_id):
