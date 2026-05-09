@@ -35,7 +35,7 @@ class CartSerializer(serializers.ModelSerializer):
         fields = ["id","items"]
 
 class OrderItemSerializer(serializers.ModelSerializer):
-
+    payment = serializers.CharField(source="order.payment_status")
     product_name = serializers.CharField(source="product.name",read_only=True)
     order_id = serializers.IntegerField(source="order.id", read_only=True)
 
@@ -47,7 +47,8 @@ class OrderItemSerializer(serializers.ModelSerializer):
             "product_id",
             "product_name",
             "quantity",
-            "price"
+            "price",
+            "payment"
         ]
 
 class OrderSerializer(serializers.ModelSerializer):
