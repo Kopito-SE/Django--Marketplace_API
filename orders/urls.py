@@ -10,7 +10,12 @@ from .views import (
     OrderDetailsView,
     VendorOrderListView,
     VendorOrderUpdateView,
-    VendorStatsView
+    VendorStatsView,
+    GuestCartView,
+    MergeGuestCartView,
+    checkout
+
+
 )
 
 urlpatterns = [
@@ -30,4 +35,9 @@ urlpatterns = [
     path("vendor/orders/", VendorOrderListView.as_view(), name='vendor-orders'),
     path("vendor/orders/<int:pk>/", VendorOrderUpdateView.as_view(), name='vendor-order-update'),
     path("vendor/stats/", VendorStatsView.as_view(), name='vendor-stats'),
+
+    #Guest Cart
+    path('guest-cart/', GuestCartView.as_view(), name='guest-cart'),
+    path('merge-guest-cart/', MergeGuestCartView.as_view(), name='merge-guest-cart'),
+    path('checkout/', checkout, name='checkout'),
 ]

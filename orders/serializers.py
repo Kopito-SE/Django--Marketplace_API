@@ -38,7 +38,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
     payment = serializers.CharField(source="order.payment_status", read_only=True)
     product_name = serializers.CharField(source="product.name",read_only=True)
     order_id = serializers.IntegerField(source="order.id", read_only=True)
-    customer = serializers.CharField(source="user.username", read_only=True)
+
     class Meta:
         model = OrderItem
         fields =[
@@ -50,7 +50,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
             "quantity",
             "price",
             "payment",
-            "customer"
+
 
         ]
 
@@ -62,4 +62,26 @@ class OrderSerializer(serializers.ModelSerializer):
         model = Order
         fields = ["id","total_price", "status", "created_at","items"]
         read_only_fields = ["id", "total_price", "created_at", "items"]
+
+# Adding Guest add to Cart Feature
+class MergeGuestCartSerializer(serializers.Serializer):
+    """Serializer for merging guest cart items"""
+    items = serializers.ListField(
+
+        child=serializers.ListField(),
+        required=True
+
+    )
+    def validate_items(self, value):
+        """Validate each guest cart item has required fields"""
+        for item in value:
+            if 'product_id' not in item:
+                raise serializers.ValidationError("Each Item must Have a product")
+
+            if 'quantity' not in item:
+                raise serializers.ValidationError("Item Must Have Quantity")
+
+            if item['quantity'] < 1:
+                raise serializers.ValidationError("Quantity Must Be More than 1")
+        return value
 

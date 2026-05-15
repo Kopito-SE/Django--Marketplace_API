@@ -1,10 +1,12 @@
 from rest_framework import generics, permissions, status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.views import APIView
 from twisted.python.compat import items
 from django.shortcuts import get_object_or_404
 
 from .models import Cart, CartItem, Order, OrderItem
-from .serializers import CartSerializer, OrderSerializer, OrderItemSerializer, CartItemSerializer
+from .serializers import CartSerializer, OrderSerializer, OrderItemSerializer, CartItemSerializer, \
+    MergeGuestCartSerializer
 from products.models import Product
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
@@ -22,44 +24,37 @@ class CartView(generics.RetrieveAPIView):
 
 
 class AddToCartView(generics.CreateAPIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def post(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return Response({
+                "message":"Item Added to Guest Cart",
+                "is_guest":True,
+                "product_id": request.data.get('product_id')
+            }),
+
         product_id = request.data.get("product_id")
         quantity = request.data.get("quantity", 1)
 
-        # Convert quantity to integer for validation
-        try:
-            quantity = int(quantity)
-        except (TypeError, ValueError):
-            raise ValidationError("Quantity must be a valid number")
-
-        if quantity <= 0:
-            raise ValidationError("Quantity must be positive")
-
-        try:
-            product = Product.objects.get(id=product_id)
-        except Product.DoesNotExist:
-            raise ValidationError("Product not found")
-
-        if product.stock < quantity:
-            raise ValidationError(f"Insufficient stock. Only {product.stock} available")
-
         cart, created = Cart.objects.get_or_create(user=request.user)
+        product = get_object_or_404(Product, id=product_id)
 
-        item, created = CartItem.objects.get_or_create(
+        cart_item, created = CartItem.objects.get_or_create(
             cart=cart,
-            product=product
+            product=product,
+            defaults={'quantity': quantity}
         )
 
         if not created:
-            item.quantity += quantity  # Now using integer variable
-        else:
-            item.quantity = quantity
+            cart_item.quantity += quantity
+            cart_item.save()
 
-        item.save()
+        serializer = CartItemSerializer(cart_item)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
-        return Response({"message": "Product added to cart"})
+
+
 
 
 class UpdateCartItemView(generics.UpdateAPIView):
@@ -335,9 +330,142 @@ class VendorStatsView(generics.GenericAPIView):
 
 
 
+class GuestCartView(APIView):
+
+    """This view just returns a structured response for guests - actual storage is frontend"""
+
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        """Return empty cart structure for guests"""
+        return Response({
+            "items": [],
+            "is_guest": True,
+            "message":"Guest mode - cart stored in browser"
+        })
+
+#Merge Cart After Login
+
+class MergeGuestCartView(APIView):
+    """Merge guest cart from frontend localStorage into user's database cart"""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = MergeGuestCartSerializer(data=request.data)
+
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        guest_items = serializer.validated_data['items']
+
+        if not guest_items:
+            return Response({
+                "message": "No items to merge",
+                "merged_count": 0
+            }, status=status.HTTP_200_OK)
+
+        # Get or create user's cart
+        cart, created = Cart.objects.get_or_create(user=request.user)
+
+        merged_items = []
+        skipped_items = []
+
+        for item in guest_items:
+            product_id = item['product_id']
+            quantity = item['quantity']
+
+            try:
+                product = Product.objects.get(id=product_id)
+
+                # Check if product already in cart
+                cart_item, created = CartItem.objects.get_or_create(
+                    cart=cart,
+                    product=product,
+                    defaults={'quantity': quantity}
+                )
+
+                if not created:
+                    # Item exists - update quantity
+                    cart_item.quantity += quantity
+                    cart_item.save()
+
+                merged_items.append({
+                    'product_id': product_id,
+                    'product_name': product.name,
+                    'quantity': cart_item.quantity
+                })
+
+            except Product.DoesNotExist:
+                skipped_items.append(product_id)
+                continue
+
+        # Get updated cart
+        updated_cart = Cart.objects.get(user=request.user)
+        cart_serializer = CartSerializer(updated_cart)
+
+        return Response({
+            "message": f"Merged {len(merged_items)} items from guest cart",
+            "merged_count": len(merged_items),
+            "skipped_items": skipped_items if skipped_items else None,
+            "cart": cart_serializer.data
+        }, status=status.HTTP_200_OK)
 
 
+# NEW: Checkout view - requires authentication
+from rest_framework.decorators import api_view, permission_classes
 
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def checkout(request):
+    """Process checkout - user must be logged in"""
+    try:
+        cart = Cart.objects.get(user=request.user)
+    except Cart.DoesNotExist:
+        return Response({
+            "error": "Cart not found"
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    if not cart.items.exists():
+        return Response({
+            "error": "Your cart is empty"
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    # Get cart items to create order
+    cart_items = cart.items.all()
+
+    # Calculate total
+    total = sum(item.quantity * item.product.price for item in cart_items)
+
+    # Create order (customize this based on your Order model)
+    order = Order.objects.create(
+        user=request.user,
+        total_price=total,
+        status='pending',
+        payment_status='pending'  # Add this field if not exists
+    )
+
+    # Create order items
+    for cart_item in cart_items:
+        OrderItem.objects.create(
+            order=order,
+            product=cart_item.product,
+            quantity=cart_item.quantity,
+            price=cart_item.product.price,
+            user=request.user
+        )
+
+    # Clear the cart after order creation
+    cart.items.all().delete()
+
+    # Serialize order response
+    from .serializers import OrderSerializer
+    order_serializer = OrderSerializer(order)
+
+    return Response({
+        "message": "Order placed successfully",
+        "order": order_serializer.data
+    }, status=status.HTTP_201_CREATED)
 
 
 

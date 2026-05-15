@@ -54,7 +54,7 @@ CELERY_TIMEZONE = "UTC"
 CACHES = {
     "default":{
         "BACKEND":"django_redis.cache.RedisCache",
-        "LOCATION": "redis://redis:6379/0",
+        "LOCATION": "redis://127.0.0.1:6379/0",
         "OPTIONS": {
             "CLIENT_CLASS":"django_redis.client.DefaultClient",
         }
@@ -71,6 +71,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+
     'django_filters',
     'rest_framework',
     'core',
@@ -82,7 +83,9 @@ INSTALLED_APPS = [
     'orders',
     'reviews',
     'django_celery_beat',
-]
+
+    ]
+
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
@@ -177,6 +180,8 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
+
+
 AUTH_USER_MODEL = "users.User"
 
 SIMPLE_JWT = {

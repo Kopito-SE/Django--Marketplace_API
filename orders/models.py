@@ -80,6 +80,7 @@ class Order(models.Model):
         return f"Order {self.pk} - {self.user}"
 
 class OrderItem(models.Model):
+    
     order = models.ForeignKey(
         Order,
         on_delete=models.CASCADE,
