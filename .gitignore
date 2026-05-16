@@ -29,5 +29,5 @@ celerybeat-schedule
 celerybeat-schedule
 celerybeat-schedule-wal
 celerybeat-schedule-wal
-requirements.txt
+
 *.txt

@@ -12,6 +12,9 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from .models import EmailOTP
 from .tasks import send_otp_mail
 
+
+class GoogleLoginView(APIView):
+    pass;
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class =RegisterSerializer
