@@ -1,4 +1,5 @@
-
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework import generics, status
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
@@ -12,9 +13,82 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from .models import EmailOTP
 from .tasks import send_otp_mail
 
+from google.oauth2 import id_token
+from google.auth.transport import requests
+from rest_framework_simplejwt.tokens import RefreshToken
 
+@method_decorator(csrf_exempt, name='dispatch')
 class GoogleLoginView(APIView):
-    pass;
+
+    def post(self, request):
+        token = request.data.get("token")
+
+        if not token:
+            return Response(
+                {"error":"Token is Required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        try:
+            idinfo = id_token.verify_oauth2_token(
+                token,
+                requests.Request(),
+                "15201590657-fl68ek84i4a10vhaobnf08tvn6qltnjd.apps.googleusercontent.com"
+            )
+            email = idinfo["email"]
+            name = idinfo.get("name","")
+            first_name = idinfo.get("given_name","")
+            last_name = idinfo.get("family_name","")
+
+            #Create or get User
+            user, created = User.objects.get_or_create(
+                email=email,
+                defaults={
+
+                    "username": email, #Use email as username
+                    "first_name": first_name or name,
+                    "last_name": last_name,
+                    "is_active": True,
+                    "is_verified": True,
+
+                }
+            )
+            #If User already exists but is not active, activate them
+
+            if not created and not user.is_active:
+                user.is_active = True
+                user.is_verified = True
+                user.save()
+
+            refresh = RefreshToken.for_user(user)
+
+            return Response({
+                "access": str(refresh.access_token),
+                "refresh": str(refresh),
+                "user": {
+                    "id": user.id,
+                    "email": user.email,
+                    "first_name": user.first_name,
+                    "last_name": user.last_name,
+
+                },
+
+                "is_new_user": created
+            })
+
+        except ValueError as e:
+            # Invalid Token
+            return Response(
+                {"error": f"Invalid token: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+
+
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class =RegisterSerializer
@@ -63,6 +137,7 @@ class VerifyOTPView(generics.GenericAPIView):
         otp.delete()
 
         return Response({"message": "Account verified successfully"})
+
 class ResendOTPView(generics.GenericAPIView):
     def post(self, request):
         email = request.data.get("email")
@@ -154,48 +229,3 @@ class ChangePasswordView(APIView):
 
 
 
-class ProfileView(generics.RetrieveUpdateAPIView):
-    """
-    GET /auth/profile/ - Get user profile
-    PUT /auth/profile/ - Update user profile
-    """
-    permission_classes = [IsAuthenticated]
-    serializer_class = UserProfileSerializer
-
-    def get_object(self):
-        return self.request.user
-
-
-class ChangePasswordView(APIView):
-    """
-    POST /auth/change-password/
-    """
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request):
-        user = request.user
-        old_password = request.data.get('old_password')
-        new_password = request.data.get('new_password')
-
-        # Check if old password is correct
-        if not check_password(old_password, user.password):
-            return Response(
-                {'detail': 'Current password is incorrect'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # Check password length
-        if len(new_password) < 8:
-            return Response(
-                {'detail': 'Password must be at least 8 characters'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # Set new password
-        user.set_password(new_password)
-        user.save()
-
-        return Response(
-            {'detail': 'Password changed successfully'},
-            status=status.HTTP_200_OK
-        )

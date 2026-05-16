@@ -9,5 +9,5 @@ urlpatterns = [
     path("resend/", ResendOTPView.as_view()),
     path("profile/", ProfileView.as_view(), name="profile"),
     path("change-password/", ChangePasswordView.as_view(), name="change-password"),
-    path("google/", GoogleLoginView.as_view())
+    path("google/", GoogleLoginView.as_view(), name="google-login"),
 ]
