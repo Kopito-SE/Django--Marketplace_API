@@ -10,9 +10,14 @@ class Cart(models.Model):
     user = models.OneToOneField(
         User,
         on_delete=models.CASCADE,
-        related_name="cart"
+        related_name="cart",
+        null=True,
+        blank=True
 
     )
+    is_guest = models.BooleanField(default=False)
+    session_key = models.CharField(max_length=40, null=True, blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -28,6 +33,7 @@ class CartItem(models.Model):
         on_delete=models.CASCADE,
 
     )
+
     quantity = models.PositiveIntegerField(default=1)
     def __str__(self):
          return f"{self.product} x {self.quantity}"
