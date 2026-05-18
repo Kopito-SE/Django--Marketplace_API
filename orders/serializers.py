@@ -63,25 +63,31 @@ class OrderSerializer(serializers.ModelSerializer):
         fields = ["id","total_price", "status", "created_at","items"]
         read_only_fields = ["id", "total_price", "created_at", "items"]
 
-# Adding Guest add to Cart Feature
+
 class MergeGuestCartSerializer(serializers.Serializer):
     """Serializer for merging guest cart items"""
     items = serializers.ListField(
-
-        child=serializers.ListField(),
+        child=serializers.DictField(),  # ✅ This should be DictField, not ListField
         required=True
-
     )
+
     def validate_items(self, value):
         """Validate each guest cart item has required fields"""
         for item in value:
             if 'product_id' not in item:
-                raise serializers.ValidationError("Each Item must Have a product")
+                raise serializers.ValidationError("Each item must have a product_id")
 
             if 'quantity' not in item:
-                raise serializers.ValidationError("Item Must Have Quantity")
+                raise serializers.ValidationError("Each item must have a quantity")
 
             if item['quantity'] < 1:
-                raise serializers.ValidationError("Quantity Must Be More than 1")
-        return value
+                raise serializers.ValidationError("Quantity must be at least 1")
 
+            # Optional: validate product_id is an integer
+            if not isinstance(item['product_id'], int):
+                raise serializers.ValidationError("product_id must be an integer")
+
+            if not isinstance(item['quantity'], int):
+                raise serializers.ValidationError("quantity must be an integer")
+
+        return value
