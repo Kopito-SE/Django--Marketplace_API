@@ -344,7 +344,7 @@ class CheckoutView(generics.GenericAPIView):
 
         # Send email
         try:
-            send_order_confirmation_email(
+            send_order_confirmation_email.delay(
                 request.user.email,
                 order.pk
             )
