@@ -1,15 +1,16 @@
 import json
-from django.shortcuts import render
+from django.db import transaction
 from rest_framework import generics, status
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
-from .utils import stk_push, query_payment_status
-from orders.models import Order
-import logging
-from datetime import datetime, timedelta
+from .utils import stk_push
 
+import logging
+
+from orders.tasks import send_order_confirmation_email
 logger = logging.getLogger(__name__)
 
 
@@ -156,83 +157,96 @@ class MpesaCallbackView(generics.GenericAPIView):
 
             # PAYMENT SUCCESS
             if str(result_code) == "0":
-                metadata = stk_callback.get(
-                    "CallbackMetadata",
-                    {}
-                ).get("Item", [])
+                with transaction.atomic():
 
-                meta_dict = {
-                    item["Name"]: item.get("Value")
-                    for item in metadata
-                }
+                 metadata = stk_callback.get(
+                     "CallbackMetadata",
+                     {}
+                 ).get("Item", [])
 
-                transaction_id = meta_dict.get("MpesaReceiptNumber")
-                amount = meta_dict.get("Amount")
-                phone = meta_dict.get("PhoneNumber")
+                 meta_dict = {
+                     item["Name"]: item.get("Value")
+                     for item in metadata
+                 }
 
-                print("✅ PAYMENT SUCCESSFUL")
-                print(f"Transaction ID: {transaction_id}")
+                 transaction_id = meta_dict.get("MpesaReceiptNumber")
+                 amount = meta_dict.get("Amount")
+                 phone = meta_dict.get("PhoneNumber")
 
-                # Update payment transaction
-                payment.status = "completed"
-                payment.transaction_id = transaction_id
-                payment.save()
+                 print("✅ PAYMENT SUCCESSFUL")
+                 print(f"Transaction ID: {transaction_id}")
 
-                cart = payment.cart
-                cart_items = cart.items.all()
+                 # Update payment transaction
+                 payment.status = "completed"
+                 payment.transaction_id = transaction_id
+                 payment.save()
 
-                if not cart_items.exists():
-                    print("❌ Cart is empty")
-                    return Response(
-                        {"message": "Cart is empty"},
-                        status=status.HTTP_200_OK
-                    )
+                 cart = payment.cart
+                 cart_items = cart.items.all()
 
-                # Create order
-                order = Order.objects.create(
-                    user=payment.user,
-                    total_price=payment.amount,
-                    payment_status="paid",
-                    transaction_id=transaction_id,
-                    status="processing"
-                )
+                 if not cart_items.exists():
+                     print("❌ Cart is empty")
+                     return Response(
+                         {"message": "Cart is empty"},
+                         status=status.HTTP_200_OK
+                     )
 
-                print(f"🛒 Created Order #{order.id}")
+                 # Create order
+                 order = Order.objects.create(
+                     user=payment.user,
+                     total_price=payment.amount,
+                     payment_status="paid",
+                     transaction_id=transaction_id,
+                     status="processing"
+                 )
 
-                total_price = 0
+                 print(f"🛒 Created Order #{order.id}")
 
-                # Create order items
-                for cart_item in cart_items:
-                    product = cart_item.product
-                    quantity = cart_item.quantity
-                    price = product.price
+                 total_price = 0
 
-                    OrderItem.objects.create(
-                        order=order,
-                        product=product,
-                        quantity=quantity,
-                        price=price
-                    )
+                 # Create order items
+                 for cart_item in cart_items:
+                     product = cart_item.product
+                     quantity = cart_item.quantity
+                     price = product.price
 
-                    # Reduce stock
-                    if product.stock >= quantity:
-                        product.stock -= quantity
-                        product.save()
+                     OrderItem.objects.create(
+                         order=order,
+                         product=product,
+                         quantity=quantity,
+                         price=price
+                     )
 
-                    total_price += price * quantity
+                     # Reduce stock
+                     if product.stock < quantity:
+                         raise Exception(
+                             f"Insufficient stock for {product.name}"
+                         )
+                     product.stock -= quantity
+                     product.save()
 
-                order.total_price = total_price
-                order.save()
+                     total_price += price * quantity
 
-                # Link payment to order
-                payment.order = order
-                payment.save()
+                 order.total_price = total_price
+                 order.save()
 
-                # Clear cart
-                cart_items.delete()
 
-                print(f"💰 Order #{order.id} marked as PAID")
-                print("🧹 Cart cleared")
+                 transaction.on_commit(
+                     lambda: send_order_confirmation_email.delay(
+                         payment.user.email,
+                         order.id
+                     )
+                 )
+
+                 # Link payment to order
+                 payment.order = order
+                 payment.save()
+
+                 # Clear cart
+                 cart_items.delete()
+
+                 print(f"💰 Order #{order.id} marked as PAID")
+                 print("🧹 Cart cleared")
 
             else:
                 print(f"❌ Payment failed: {result_desc}")

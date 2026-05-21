@@ -20,3 +20,4 @@ def send_order_confirmation_email(user_email, order_id):
         [user_email],
         fail_silently=False,
     )
+    
